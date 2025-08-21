@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Aplicação NestJS
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - rabbitmq
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=secret
+      - DB_DATABASE=ecommerce_events
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - RABBITMQ_QUEUE_NAME=user_interactions_queue
+      - MAX_RETRY_ATTEMPTS=3
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  # PostgreSQL
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ecommerce_events
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Interface de gerenciamento
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  pgadmin_data:
